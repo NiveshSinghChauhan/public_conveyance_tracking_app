@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:transportation_tracking_app/class/route.dart';
 import 'package:transportation_tracking_app/screens/RouteInfoScreen.dart';
 
+import 'SettingScreen.dart';
+
 class RoutesListScreen extends StatefulWidget {
   @override
   _RoutesListScreenState createState() => _RoutesListScreenState();
@@ -57,6 +59,16 @@ class _RoutesListScreenState extends State<RoutesListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Routes List'),
+        actions: [
+          IconButton(icon: Icon(Icons.settings),onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SettingScreen(),
+              ),
+            );
+          })
+        ],
       ),
       body: gettingRoutesLoading
           ? Center(child: CircularProgressIndicator())

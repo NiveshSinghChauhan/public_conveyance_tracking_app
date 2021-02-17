@@ -1,9 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
+import 'package:geolocator/geolocator.dart';
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:telephony/telephony.dart';
 import 'package:transportation_tracking_app/class/route.dart';
 import 'package:transportation_tracking_app/class/vehicle.dart';
 import 'package:transportation_tracking_app/screens/RoutesListScreen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AllRoutesScreen extends StatefulWidget {
   @override
@@ -19,10 +25,26 @@ class _AllRoutesScreenState extends State<AllRoutesScreen> {
 
   List<VehicleRoute> showRoutes;
   List<Vehicle> showVehicles;
+  SharedPreferences prefs;
+  bool emergencyPresent = false;
+  final Telephony telephony = Telephony.instance;
+
+  Future<void> getPrefs() async {
+    prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      emergencyPresent = prefs.getString("emergency")!=null?true:false;
+    });
+
+
+  }
 
   @override
   void initState() {
     super.initState();
+
+    getPrefs();
+
     getRoutes();
 
     FirebaseFirestore.instance
@@ -30,7 +52,7 @@ class _AllRoutesScreenState extends State<AllRoutesScreen> {
         .snapshots()
         .listen((event) {
       setState(() {
-        vehicles = event.docs
+        vehicles = event.docs.where((element) => element.data()["location"]!=null)
             .map((vehicle) => Vehicle.from(
                   location: vehicle.get('location'),
                   id: vehicle.id,
@@ -73,7 +95,7 @@ class _AllRoutesScreenState extends State<AllRoutesScreen> {
                 int.parse(('0xff${searchedRoute.get('color')}').toString())))
       ];
 
-      showVehicles = searchedVehicles.docs
+      showVehicles = searchedVehicles.docs.where((element) => element.data()["location"]!=null)
           .map((searchedVehicle) => Vehicle.from(
                 location: searchedVehicle.get('location'),
                 id: searchedVehicle.id,
@@ -113,9 +135,11 @@ class _AllRoutesScreenState extends State<AllRoutesScreen> {
     return Scaffold(
       body: Stack(
         children: [
+
           GoogleMap(
-            myLocationEnabled: true,
+            cameraTargetBounds: CameraTargetBounds(new LatLngBounds(southwest: LatLng(26.105168, 74.314329), northeast: LatLng(26.679939,75.234003))),
             myLocationButtonEnabled: true,
+            myLocationEnabled: true,
             initialCameraPosition: CameraPosition(
               zoom: 13,
               target: LatLng(
@@ -167,7 +191,14 @@ class _AllRoutesScreenState extends State<AllRoutesScreen> {
                           MaterialPageRoute(
                             builder: (context) => RoutesListScreen(),
                           ),
-                        );
+                        ).whenComplete(() => {
+
+                        setState(() {
+                        emergencyPresent = prefs.getString("emergency")!=null?true:false;
+                        })
+
+
+                        });
                       },
                       child: Container(
                         padding: EdgeInsets.all(12),
@@ -262,7 +293,36 @@ class _AllRoutesScreenState extends State<AllRoutesScreen> {
                 ],
               ),
             ),
-          )
+          ),
+
+          Positioned(
+            bottom: 0,
+            left: 0,
+            child:Padding(
+              padding: EdgeInsets.all(20),
+              child: FloatingActionButton(
+
+              backgroundColor: Colors.white,
+              child: Icon(Icons.error_outline_outlined,color: emergencyPresent ? Colors.red:Colors.grey,size: 50,),
+              onPressed: () async {
+                if(emergencyPresent){
+
+                  Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.bestForNavigation);
+
+                  telephony.sendSms(to: prefs.getString('emergency'), message: "I need help, not feeling safe\n https://www.google.com/maps/place/${position.latitude},${position.longitude}");
+
+                  var url = 'tel:${prefs.getString('emergency')}';
+                  if (await canLaunch(url)) {
+                    await launch(url);
+                  } else {
+                    throw 'Could not launch $url';
+                  }
+                }
+              },
+            ),
+            )
+          ),
+
         ],
       ),
     );

@@ -29,10 +29,13 @@ dependencies:
   cupertino_icons: ^1.0.0
 
   geolocator: ^6.2.0
-  firebase_core: '0.7.0'
-  cloud_firestore: '^0.16.0'
+  firebase_core: ^0.7.0
+  cloud_firestore: ^0.16.0
   google_maps_flutter: ^1.2.0
   strings: ^0.1.4
+  shared_preferences: ^0.5.12+4
+  telephony: ^0.0.7
+  url_launcher: ^5.7.10
 
 dev_dependencies:
   flutter_test:

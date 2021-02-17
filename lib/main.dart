@@ -2,12 +2,17 @@ import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+
 import 'package:transportation_tracking_app/screens/AllRoutesScreen.dart';
-import 'package:transportation_tracking_app/screens/LiveVehicleLocScreen.dart';
+
+import 'package:flutter/services.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent, // transparent status bar
+    statusBarIconBrightness: Brightness.dark
+  ));
   runApp(MyApp());
 }
 
